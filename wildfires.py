@@ -6,12 +6,13 @@ import pandas as pd
 con = sqlite3.connect("RDS-2013-0009.4_SQLite/Data/FPA_FOD_20170508.sqlite")
 cur = con.cursor()
 
-# creates dataframe where fire durations are expressed in total minutes.
-fire_durations = pd.read_sql("select fod_id, cont_date * 24 * 60 + substr(cont_time, 1, 2) * 60 + "
-                             "substr(cont_time, 3, 2) - discovery_date * 24 * 60 + substr(discovery_time, 1, 2) * 60 + "
-                             "substr(discovery_time, 3, 2) fire_duration from fires", con)
+# creates dataframe where fire durations are expressed in total minutes. Removes columns where cont_date is null.
+# if cont_time is not provided, sets to 2359. if disc_time is not provided, sets to 0000.
+fire_durations = pd.read_sql("select fod_id, (cont_date * 24 * 60 + substr(ifnull(cont_time, \"2359\"), 1, 2) * 60 + "
+                             "substr(ifnull(cont_time, \"2359\"), 3, 2)) - (discovery_date * 24 * 60 + "
+                             "substr(ifnull(discovery_time, \"0000\"), 1, 2) * 60 + substr(ifnull(discovery_time, "
+                             "\"0000\"), 3, 2)) fire_duration from fires where cont_date is not null", con)
 
-# what if time is none, but date appears?
 # some fire acres are placed in classes. Should we ignore those?
 
 # extracts primary key FOD_ID and the unit type (landowner) from the agency that reported the fire.
