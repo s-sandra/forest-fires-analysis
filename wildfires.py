@@ -19,3 +19,8 @@ fire_durations = pd.read_sql("select fod_id, (cont_date * 24 * 60 + substr(ifnul
 # value in UnitType column can be US Federal, US State, US County/Local, Tribe or Interagency.
 land_owner = pd.read_sql("select fod_id, UnitType  from fires join nwcg_unitidactive_20170109 "
                         "on nwcg_reporting_unit_id==unitid", con)
+
+fire_size = pd.read_sql("select fod_id, fire_size from fires")
+fire_year = pd.read_sgl("select fod_id, fire_year from fires")
+fire_state = pd.read_sgl("select fod_id, state from fires")
+fire_cause = pd.read_sql("select fod_id, stat_cause_descr from fires")
