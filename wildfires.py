@@ -33,8 +33,11 @@ labels = fires.cause.drop_duplicates()
 numeric_features = ["duration", "size", "year"]
 categorical_features = ["state", "landowner"]
 
+training_data = fires.sample(frac=0.7) # 70% of data used for training
+test_data = fires.drop(training_data.index) # the remaining 30% is used for testing classifier
+
 for label in labels:
-    # get all the rows with the current label. Store it in a variable called rows.
+    # get all the rows in training data with the current label. Store it in a variable called rows.
     rows = None
     # add a key-value pair to probs, where the key is the label and the value is the prior probability of the label.
 
@@ -60,11 +63,11 @@ def predict(size, year, state, duration, landowner, cause):
     # computes probability of all features given each label.
     for label in labels:
         # obtain and store the prior probability of the current label in a variable called prob.
-
         prob = None
-        # obtain pdf for size, multiply by prob and set product equal to prob.
-        # obtain pdf for year, multiply by prob and set product equal to prob.
-        # obtain pdf for duration, multiply by prob and set product equal to prob.
+
+        prob *= densities["size|" + label].pdf(size)
+        prob *= densities["year|" + label].pdf(year)
+        prob *= densities["duration|" + label].pdf(duration)
 
         # obtain conditional probability for landowner given label from probs, multiply by prob and set product equal to prob.
         # obtain conditional probability for state given label from probs, multiply by prob and set product equal to prob.
@@ -75,3 +78,4 @@ def predict(size, year, state, duration, landowner, cause):
         scores.append(prob)
 
     return [prediction, highest_prob / sum(scores)]
+
