@@ -63,7 +63,7 @@ def predict(size, year, state, duration, landowner, cause):
     # computes probability of all features given each label.
     for label in labels:
         # obtain and store the prior probability of the current label in a variable called prob.
-        prob = None
+        prob = 0
 
         prob *= densities["size|" + label].pdf(size)
         prob *= densities["year|" + label].pdf(year)
