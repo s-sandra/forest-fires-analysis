@@ -26,6 +26,8 @@ fires = pd.read_sql("select "
 # changes column names.
 fires.columns = ["size", "year", "state", "duration", "landowner", "cause"]
 
+# consider calculating fire duration using cont_doy and discovery_doy.
+
 probs = {} # dictionary containing prior and conditional probabilities for categorical features.
 densities = {} # dictionary containing density values for numerical features.
 
@@ -37,45 +39,61 @@ training_data = fires.sample(frac=0.7) # 70% of data used for training
 test_data = fires.drop(training_data.index) # the remaining 30% is used for testing classifier
 
 for label in labels:
-    # get all the rows in training data with the current label. Store it in a variable called rows.
-    rows = None
-    # add a key-value pair to probs, where the key is the label and the value is the prior probability of the label.
+    rows = training_data[training_data.cause == label]
+    probs[label] = len(rows) / len(training_data) # calculates the prior probability for each label value.
 
     # computes densities for all numeric features given the current label.
     for feature in numeric_features:
-        density = scipy.stats.norm(rows.feature.mean(), rows.feature.std())
+        density = scipy.stats.norm(rows[feature].mean(), rows[feature].std())
         densities[feature + "|" + label] = density
 
     # computes conditional probs for all categorical features given the current label.
     for feature in categorical_features:
-        probs[feature + "|" + label] = None
-        # loop through all the possible values for each categorical feature
-        # for each value, calculate the probability of both the value and the label together.
-        # store the result as a key-value pair in probs, where the key is "feature|label" and the value
-        # is the probability.
+        for value in training_data[feature].drop_duplicates(): # loops through all the possible values for each categorical feature.
+            probs[value + "|" + label] = len(rows[rows[feature] == value]) / len(rows) # the probability of both the value and the label together.
 
+    print("Computed probabilities for label value " + label + " in training data....")
+
+print(densities)
 # documentation goes here.
-def predict(size, year, state, duration, landowner, cause):
+def predict(size, year, state, duration, landowner):
     scores = [] # stores the probability of inputted features given each label.
     highest_prob = 0
     prediction = ""
 
     # computes probability of all features given each label.
     for label in labels:
-        # obtain and store the prior probability of the current label in a variable called prob.
-        prob = 0
+        prob = probs[label] # obtains the prior probability of the current label.
 
         prob *= densities["size|" + label].pdf(size)
         prob *= densities["year|" + label].pdf(year)
         prob *= densities["duration|" + label].pdf(duration)
 
-        # obtain conditional probability for landowner given label from probs, multiply by prob and set product equal to prob.
-        # obtain conditional probability for state given label from probs, multiply by prob and set product equal to prob.
+        prob *= probs[state + "|" + label]
+        prob *= probs[landowner + "|" + label]
 
-        # check if the current prob is greater than highest_prob. If yes, set highest_prob to prob and prediction
-        # to current label.
+        # checks if the current prob is greater than highest_prob.
+        # If so, updates prediction and highest_prob.
+        if prob > highest_prob:
+            highest_prob = prob
+            prediction = label
 
         scores.append(prob)
 
     return [prediction, highest_prob / sum(scores)]
 
+num_correct = 0
+
+# iterates through all rows of test data
+for i in range(len(test_data)):
+    row = test_data.iloc[i]
+    prediction, confidence = predict(row.size, row.year, row.state, row.duration, row.landowner)
+
+    # checks if outputted prediction matches test label.
+    if prediction == row.cause:
+        num_correct += 1
+
+    print("Computed row " + str(i) + " in test data. Predicted: " + prediction + ". Confidence: " + str(confidence))
+
+print("We got " + str(num_correct / len(test_data) * 100) + "% correct on the test data.")
+# We got 30.83885626445345% correct on the test data.
