@@ -18,8 +18,9 @@ fires = pd.read_sql("select "
                              "substr(ifnull(cont_time, \"2359\"), 3, 2)) - (discovery_date * 24 * 60 + "
                              "substr(ifnull(discovery_time, \"0000\"), 1, 2) * 60 + substr(ifnull(discovery_time, "
                              "\"0000\"), 3, 2)) FIRE_DURATION, " # in minutes
-                             "UnitType," # entity that owns the land where the fires occurred.
-                             "stat_cause_descr " # fire cause. Can be US Federal, US State, US County/Local, Tribe or Interagency.
+                             "UnitType," # entity that owns the land where the fires occurred. 
+                                         # Can be US Federal, US State, US County/Local, Tribe or Interagency.
+                             "stat_cause_descr " # fire cause.
                              "from fires join nwcg_unitidactive_20170109 on nwcg_reporting_unit_id==unitid "
                              "where cont_date is not null", con)
 
@@ -54,8 +55,21 @@ for label in labels:
 
     print("Computed probabilities for label value " + label + " in training data....")
 
-print(densities)
-# documentation goes here.
+
+"""
+The predict function takes in the feature values for a given wildfire, 
+and outputs the predicted cause of the wildfire using Bayes' rule, as well as the
+confidence level of the outputted prediction.
+
+:param size:        The int size of the wildfire, in acres. 
+:param year:        The int year in which the wildfire occurred.
+:param state:       The string U.S. state in which the wildfire occurred, as an abbreviation.
+:param duration:    The float minutes the wildfire burned from its discovery date and time to containment date and time.
+:param landowner:   The string entity that owned the land where the wildfire occurred. It can be US Federal, US State, 
+                    US County/Local, Tribe or Interagency.
+:returns:           An array where the first element is the predicted cause of the fire and the second element is the 
+                    confidence level of the prediction as a float between 0 and 1.
+"""
 def predict(size, year, state, duration, landowner):
     scores = [] # stores the probability of inputted features given each label.
     highest_prob = 0
