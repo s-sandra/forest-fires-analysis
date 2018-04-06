@@ -22,7 +22,9 @@ fires = pd.read_sql("select "
                                          # Can be US Federal, US State, US County/Local, Tribe or Interagency.
                              "stat_cause_descr " # fire cause.
                              "from fires join nwcg_unitidactive_20170109 on nwcg_reporting_unit_id==unitid "
-                             "where cont_date is not null", con)
+                             "where cont_date is not null and "
+                             "discovery_date != cont_date and " # some fire start and end days and times are the same
+                             "cont_time != discovery_time", con)
 
 # changes column names.
 fires.columns = ["size", "year", "state", "duration", "landowner", "cause"]
@@ -55,13 +57,12 @@ for label in labels:
 
     print("Computed probabilities for label value " + label + " in training data....")
 
-
 """
 The predict function takes in the feature values for a given wildfire, 
 and outputs the predicted cause of the wildfire using Bayes' rule, as well as the
 confidence level of the outputted prediction.
 
-:param size:        The int size of the wildfire, in acres. 
+:param size:        The float size of the wildfire, in acres. 
 :param year:        The int year in which the wildfire occurred.
 :param state:       The string U.S. state in which the wildfire occurred, as an abbreviation.
 :param duration:    The float minutes the wildfire burned from its discovery date and time to containment date and time.
@@ -107,7 +108,7 @@ for i in range(len(test_data)):
     if prediction == row.cause:
         num_correct += 1
 
-    print("Computed row " + str(i) + " in test data. Predicted: " + prediction + ". Confidence: " + str(confidence))
+    if i % 1000 == 0:
+        print("Computed row " + str(i) + " in test data.")
 
 print("We got " + str(num_correct / len(test_data) * 100) + "% correct on the test data.")
-# We got 30.83885626445345% correct on the test data.
