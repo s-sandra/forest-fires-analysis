@@ -55,8 +55,6 @@ for label in labels:
         for value in training_data[feature].drop_duplicates(): # loops through all the possible values for each categorical feature.
             probs[value + "|" + label] = len(rows[rows[feature] == value]) / len(rows) # the probability of both the value and the label together.
 
-    print("Computed probabilities for label value " + label + " in training data....")
-
 """
 The predict function takes in the feature values for a given wildfire, 
 and outputs the predicted cause of the wildfire using Bayes' rule, as well as the
@@ -74,26 +72,40 @@ confidence level of the outputted prediction.
 def predict(size, year, state, duration, landowner):
     scores = [] # stores the probability of inputted features given each label.
     highest_prob = 0
-    prediction = ""
+    prediction = "" # default prediction is highest prior.
+    highest_prior = 0
 
     # computes probability of all features given each label.
     for label in labels:
         prob = probs[label] # obtains the prior probability of the current label.
 
+        # checks if the prior probability of the current label is the highest prior probability.
+        # if yes, sets default prediction to current label.
+        if prob > highest_prior:
+            prediction = label
+            highest_prior = prob
+
         prob *= densities["size|" + label].pdf(size)
         prob *= densities["year|" + label].pdf(year)
         prob *= densities["duration|" + label].pdf(duration)
 
-        prob *= probs[state + "|" + label]
-        prob *= probs[landowner + "|" + label]
+        # classifier possibly could never have trained on state|label or duration|label.
+        try:
+            prob *= probs[state + "|" + label]
+            prob *= probs[landowner + "|" + label]
+        except KeyError:
+            prob *= 0
 
         # checks if the current prob is greater than highest_prob.
         # If so, updates prediction and highest_prob.
         if prob > highest_prob:
             highest_prob = prob
             prediction = label
-
         scores.append(prob)
+
+    # all conditional probabilities could be zero, so outputs highest prior and its probability.
+    if sum(scores) == 0:
+        return [prediction, probs[prediction]]
 
     return [prediction, highest_prob / sum(scores)]
 
