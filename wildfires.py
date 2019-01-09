@@ -1,4 +1,4 @@
-# @ authors Hannah Frederick, Sandra Shtabnaya and Jorge Contreras
+# @ authors Hannah Frederick and Sandra Shtabnaya
 
 import sqlite3
 import pandas as pd
